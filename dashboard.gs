@@ -636,6 +636,49 @@ function clientDebugCategories() {
   Logger.log("=== BİTTİ ===");
 }
 
+// Test: clientGetProductsByFilters'ı doğrudan editörden çağır
+function clientTestFilter() {
+  Logger.log(">>> TEST BAŞLADI: clientGetProductsByFilters('LAZER', '', '')");
+  try {
+    var result = clientGetProductsByFilters("LAZER", "", "");
+    Logger.log("Fonksiyon çağrıldı. success=" + result.success + ", sonuç sayısı=" + result.data.length);
+    if (result.data.length > 0) {
+      Logger.log("İlk 3 sonuç:");
+      for (var i = 0; i < Math.min(3, result.data.length); i++) {
+        var d = result.data[i];
+        Logger.log("  " + d.code + " | " + d.marka + " | " + d.model + " | stok:" + d.stok);
+      }
+    } else {
+      Logger.log("⚠️ SONUÇ BOŞ — fonksiyon hiç eşleşme bulamadı!");
+      // Manuel kontrol: Doğrudan satır satır bak
+      var stok = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_STOK);
+      var lastRow = stok.getLastRow();
+      var data = stok.getRange(1, 1, lastRow, S_RAF).getValues();
+      var idxKat = S_KATEGORI - 1;
+      var idxKod = S_STOK_KODU - 1;
+      var found = 0;
+      for (var j = 1; j < data.length; j++) {
+        var rawKat = String(data[j][idxKat] || "");
+        var normKat = normalizeSearch_(rawKat);
+        if (normKat === "LAZER") found++;
+      }
+      Logger.log("Manuel sayım: LAZER satırı = " + found);
+      Logger.log("normalizeSearch_('LAZER') = '" + normalizeSearch_("LAZER") + "'");
+      // İlk LAZER satırının detaylarını göster
+      for (var k = 1; k < data.length; k++) {
+        if (normalizeSearch_(data[k][idxKat]) === "LAZER") {
+          Logger.log("İlk LAZER satırı (row " + (k+1) + "): kod=" + data[k][idxKod] + ", kod truthy=" + (!!data[k][idxKod]));
+          break;
+        }
+      }
+    }
+  } catch (e) {
+    Logger.log("❌ HATA: " + e.message);
+    Logger.log("Stack: " + e.stack);
+  }
+  Logger.log(">>> TEST BİTTİ");
+}
+
 function updateShortHistory_(type, code, urunAdi, adet, projeAdi) {
   try {
     const props = PropertiesService.getScriptProperties();
