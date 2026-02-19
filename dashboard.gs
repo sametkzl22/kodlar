@@ -613,3 +613,9 @@ function clientGetShortHistory() {
   const stored = props.getProperty('LAST_5_TX');
   return stored ? JSON.parse(stored) : [];
 }
+
+// Son hareketler geçmişini sıfırla
+function clientClearHistory() {
+  PropertiesService.getScriptProperties().deleteProperty('LAST_5_TX');
+  Logger.log("✅ Son hareketler geçmişi temizlendi.");
+}
