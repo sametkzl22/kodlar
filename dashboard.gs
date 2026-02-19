@@ -546,19 +546,23 @@ function clientGetProductsByBrand(brandName) {
 function clientGetProductsByFilters(kat, mar, mod) {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   const stok = ss.getSheetByName(SHEET_STOK);
-  const data = stok.getDataRange().getValues();
+  const lastRow = stok.getLastRow();
+  if (lastRow < 2) return { success: true, data: [] };
+
+  // A1'den başlayarak al — getDataRange() boş A sütununu atlayabilir, indeksler kayar
+  const data = stok.getRange(1, 1, lastRow, S_RAF).getValues();
 
   const searchKat = normalizeKey_(kat);
   const searchMar = normalizeKey_(mar);
   const searchMod = normalizeKey_(mod);
 
-  const idxKat     = S_KATEGORI - 1;   // 1
-  const idxMarka   = S_MARKA - 1;      // 3
-  const idxModel   = S_MODEL - 1;      // 4
-  const idxKod     = S_STOK_KODU - 1;  // 2
-  const idxOzellik = S_OZELLIK - 1;    // 5
-  const idxStok    = S_GUNCEL - 1;     // 9
-  const idxRaf     = S_RAF - 1;        // 12
+  const idxKat     = S_KATEGORI - 1;   // B=1
+  const idxMarka   = S_MARKA - 1;      // D=3
+  const idxModel   = S_MODEL - 1;      // E=4
+  const idxKod     = S_STOK_KODU - 1;  // C=2
+  const idxOzellik = S_OZELLIK - 1;    // F=5
+  const idxStok    = S_GUNCEL - 1;     // J=9
+  const idxRaf     = S_RAF - 1;        // M=12
 
   var results = [];
   for (var i = 1; i < data.length; i++) {
