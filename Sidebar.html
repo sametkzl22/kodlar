@@ -119,8 +119,6 @@
           </button>
           <p class="text-xs text-gray-400 mt-2 text-center">* Kategori, Marka veya Model alanlarından herhangi birini
             (veya birkaçını) doldurarak arama yapabilirsiniz.</p>
-          <button onclick="debugLazerSearch()"
-            class="w-full mt-2 bg-red-500 text-white py-2 rounded-lg text-xs font-bold">🔧 DEBUG: LAZER TESTİ</button>
         </div>
 
         <div id="brand-results-area" class="hidden mt-6 animate-fade-in-up">
@@ -415,18 +413,6 @@
       google.script.run.withSuccessHandler(onSearchSuccess).withFailureHandler(onFailure).clientSearchProduct(code);
     }
 
-    // --- DEBUG: LAZER TESTİ ---
-    function debugLazerSearch() {
-      alert('DEBUG: clientGetProductsByFilters(LAZER, "", "") çağrılıyor...');
-      google.script.run
-        .withSuccessHandler(function (res) {
-          alert('BAŞARILI! success=' + res.success + ', sonuç=' + res.data.length + '\nİlk: ' + (res.data.length > 0 ? JSON.stringify(res.data[0]) : 'YOK'));
-        })
-        .withFailureHandler(function (err) {
-          alert('HATA: ' + err.message);
-        })
-        .clientGetProductsByFilters('LAZER', '', '');
-    }
 
     // --- DETAYLI ARAMA (KOMBİNE FİLTRE) ---
     function doDetailSearch() {
@@ -435,8 +421,6 @@
       const mod = document.getElementById('s-model').value.trim();
 
       if (!kat && !mar && !mod) return showMsg('Lütfen en az bir kriter (Kategori, Marka veya Model) girin.', 'error');
-
-      alert('DEBUG doDetailSearch: kat="' + kat + '", mar="' + mar + '", mod="' + mod + '"');
 
       showLoader(true);
       hideProductCard();
@@ -472,7 +456,6 @@
     // --- MARKA LİSTESİ SONUÇLARI (TABLO) ---
     function onBrandListSuccess(res) {
       showLoader(false);
-      alert('DEBUG onBrandListSuccess: success=' + res.success + ', data.length=' + (res.data ? res.data.length : 'UNDEFINED'));
       if (!res.success || res.data.length === 0) {
         showMsg("Kriterlere uygun ürün bulunamadı.", 'error'); return;
       }
