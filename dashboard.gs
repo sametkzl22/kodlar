@@ -583,8 +583,12 @@ function clientGetProductsByFilters(kat, mar, mod) {
     if (searchMod && normalizeSearch_(row[idxModel]).indexOf(searchMod) === -1) continue;
 
     results.push({
-      code: row[idxKod], marka: row[idxMarka], model: row[idxModel],
-      ozellik: row[idxOzellik], stok: row[idxStok], raf: row[idxRaf]
+      code: String(row[idxKod] || ""),
+      marka: String(row[idxMarka] || ""),
+      model: String(row[idxModel] || ""),
+      ozellik: String(row[idxOzellik] || ""),
+      stok: (typeof row[idxStok] === 'number' ? row[idxStok] : (Number(row[idxStok]) || 0)),
+      raf: String(row[idxRaf] || "")
     });
   }
 
