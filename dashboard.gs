@@ -543,6 +543,39 @@ function clientGetProductsByBrand(brandName) {
   return { success: true, data: results };
 }
 
+function clientGetProductsByFilters(kat, mar, mod) {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const stok = ss.getSheetByName(SHEET_STOK);
+  const data = stok.getDataRange().getValues();
+
+  const searchKat = normalizeKey_(kat);
+  const searchMar = normalizeKey_(mar);
+  const searchMod = normalizeKey_(mod);
+
+  const idxKat     = (typeof S_KATEGORI !== 'undefined' ? S_KATEGORI : 2) - 1;
+  const idxMarka   = (typeof S_MARKA !== 'undefined' ? S_MARKA : 4) - 1;
+  const idxModel   = (typeof S_MODEL !== 'undefined' ? S_MODEL : 5) - 1;
+  const idxKod     = (typeof S_STOK_KODU !== 'undefined' ? S_STOK_KODU : 3) - 1;
+  const idxOzellik = (typeof S_OZELLIK !== 'undefined' ? S_OZELLIK : 6) - 1;
+  const idxStok    = (typeof S_GUNCEL !== 'undefined' ? S_GUNCEL : 10) - 1;
+  const idxRaf     = (typeof S_RAF !== 'undefined' ? S_RAF : 13) - 1;
+
+  const results = data.slice(1).filter(function(row) {
+    if (!row[idxKod]) return false;
+    if (searchKat && normalizeKey_(row[idxKat]).indexOf(searchKat) === -1) return false;
+    if (searchMar && normalizeKey_(row[idxMarka]).indexOf(searchMar) === -1) return false;
+    if (searchMod && normalizeKey_(row[idxModel]).indexOf(searchMod) === -1) return false;
+    return true;
+  }).map(function(row) {
+    return {
+      code: row[idxKod], marka: row[idxMarka], model: row[idxModel],
+      ozellik: row[idxOzellik], stok: row[idxStok], raf: row[idxRaf]
+    };
+  });
+
+  return { success: true, data: results };
+}
+
 function updateShortHistory_(type, code, urunAdi, adet, projeAdi) {
   try {
     const props = PropertiesService.getScriptProperties();
