@@ -543,18 +543,24 @@ function clientGetProductsByBrand(brandName) {
   return { success: true, data: results };
 }
 
+// Unicode NFC + normalizeKey_ — Türkçe İ/Ş/Ö/Ü/Ç farklı byte temsillerini eşitler
+function normalizeSearch_(v) {
+  if (v === null || v === undefined) return "";
+  return String(v).normalize('NFC').trim().replace(/\s+/g, " ").toUpperCase();
+}
+
 function clientGetProductsByFilters(kat, mar, mod) {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   const stok = ss.getSheetByName(SHEET_STOK);
   const lastRow = stok.getLastRow();
   if (lastRow < 2) return { success: true, data: [] };
 
-  // A1'den başlayarak al — getDataRange() boş A sütununu atlayabilir, indeksler kayar
+  // A1'den başlayarak al — getDataRange() boş A sütununu atlayabilir
   const data = stok.getRange(1, 1, lastRow, S_RAF).getValues();
 
-  const searchKat = normalizeKey_(kat);
-  const searchMar = normalizeKey_(mar);
-  const searchMod = normalizeKey_(mod);
+  const searchKat = normalizeSearch_(kat);
+  const searchMar = normalizeSearch_(mar);
+  const searchMod = normalizeSearch_(mod);
 
   const idxKat     = S_KATEGORI - 1;   // B=1
   const idxMarka   = S_MARKA - 1;      // D=3
@@ -569,12 +575,12 @@ function clientGetProductsByFilters(kat, mar, mod) {
     var row = data[i];
     if (!row[idxKod]) continue;
 
-    // Kategori: tam eşleşme (===)
-    if (searchKat && normalizeKey_(row[idxKat]) !== searchKat) continue;
+    // Kategori: tam eşleşme (===) — NFC ile normalize edilmiş
+    if (searchKat && normalizeSearch_(row[idxKat]) !== searchKat) continue;
     // Marka: kısmi eşleşme (indexOf / contains)
-    if (searchMar && normalizeKey_(row[idxMarka]).indexOf(searchMar) === -1) continue;
+    if (searchMar && normalizeSearch_(row[idxMarka]).indexOf(searchMar) === -1) continue;
     // Model: kısmi eşleşme (indexOf / contains)
-    if (searchMod && normalizeKey_(row[idxModel]).indexOf(searchMod) === -1) continue;
+    if (searchMod && normalizeSearch_(row[idxModel]).indexOf(searchMod) === -1) continue;
 
     results.push({
       code: row[idxKod], marka: row[idxMarka], model: row[idxModel],
@@ -583,6 +589,40 @@ function clientGetProductsByFilters(kat, mar, mod) {
   }
 
   return { success: true, data: results };
+}
+
+// Diagnostik: STOK sayfasındaki kategorileri ve char kodlarını döner
+function clientDebugCategories() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const stok = ss.getSheetByName(SHEET_STOK);
+  const lastRow = stok.getLastRow();
+  if (lastRow < 2) return { categories: [], sampleRow: [], total: 0 };
+
+  const data = stok.getRange(1, 1, lastRow, S_RAF).getValues();
+  const idxKat = S_KATEGORI - 1;
+
+  var cats = {};
+  for (var i = 1; i < data.length; i++) {
+    var raw = String(data[i][idxKat] || "");
+    var norm = normalizeSearch_(data[i][idxKat]);
+    if (!raw.trim()) continue;
+    if (!cats[raw]) {
+      var codes = [];
+      for (var c = 0; c < raw.length; c++) codes.push(raw.charCodeAt(c));
+      cats[raw] = { raw: raw, normalized: norm, charCodes: codes, count: 0 };
+    }
+    cats[raw].count++;
+  }
+
+  // İlk veri satırını header eşlemesi kontrolü için gönder
+  var sampleRow = [];
+  if (data.length > 1) {
+    for (var j = 0; j < data[1].length; j++) {
+      sampleRow.push({ col: j, header: String(data[0][j] || ""), value: String(data[1][j] || "") });
+    }
+  }
+
+  return { categories: Object.values(cats), sampleRow: sampleRow, total: lastRow - 1 };
 }
 
 function updateShortHistory_(type, code, urunAdi, adet, projeAdi) {
