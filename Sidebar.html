@@ -341,16 +341,25 @@
   </div>
 
   <script>
-    let activeProductCode = "";
-    const KATEGORI_LISTESI = ["ELEKTRİK", "PNÖMATİK", "OTOMASYON", "DEMİRBAŞ", "ROBOT", "ŞİRKET STOK", "LAZER", "MEKANİK"];
-    const BIRIM_LISTESI = ["ADET", "UZUNLUK (M)", "KG", "LİTRE", "PAKET", "SET"];
+    // Listeler artık config.gs -> dashboard.gs üzerinden dinamik gelecek.
+    let KATEGORI_LISTESI = [];
+    let BIRIM_LISTESI = [];
 
     window.onload = function () {
-      populateLocalLists();
       showLoader(true);
-      setTimeout(() => showLoader(false), 500);
 
-      loadRecentHistory(); // <--- BU SATIRI EKLE
+      // Backend'den listeleri çek
+      google.script.run
+        .withSuccessHandler(function (data) {
+          KATEGORI_LISTESI = data.kategoriler || [];
+          BIRIM_LISTESI = data.birimler || [];
+          populateLocalLists();
+          showLoader(false);
+        })
+        .withFailureHandler(onFailure)
+        .clientGetCategories();
+
+      loadRecentHistory();
     };
 
     function populateLocalLists() {
@@ -359,6 +368,11 @@
 
       catSelect.innerHTML = '<option value="">Seçiniz...</option>';
       searchCatSelect.innerHTML = '<option value="">Seçiniz...</option>';
+
+      // Eğer liste boşsa fallback yapmamıza gerek yok, backend'den gelmeli.
+      if (!KATEGORI_LISTESI || KATEGORI_LISTESI.length === 0) {
+        console.warn("Kategori listesi boş geldi!");
+      }
 
       KATEGORI_LISTESI.forEach(c => {
         let opt1 = document.createElement('option');
@@ -424,9 +438,16 @@
       showLoader(true);
       hideProductCard();
       hideBrandResults();
+
+      // Timeout Koruması (15sn)
+      const timer = setTimeout(() => {
+        showLoader(false);
+        showMsg("Arama zaman aşımına uğradı. Kriterleri daraltıp tekrar deneyin.", "error");
+      }, 15000);
+
       google.script.run
-        .withSuccessHandler(onBrandListSuccess)
-        .withFailureHandler(onFailure)
+        .withSuccessHandler((res) => { clearTimeout(timer); onBrandListSuccess(res); })
+        .withFailureHandler((err) => { clearTimeout(timer); onFailure(err); })
         .clientGetProductsByFilters(kat, mar, mod);
     }
 
@@ -498,7 +519,17 @@
       activeProductCode = code;
       hideBrandResults();
       showLoader(true);
-      google.script.run.withSuccessHandler(onSearchSuccess).withFailureHandler(onFailure).clientSearchProduct(code);
+
+      // Timeout Koruması (15sn)
+      const timer = setTimeout(() => {
+        showLoader(false);
+        showMsg("İşlem zaman aşımına uğradı. Lütfen tekrar deneyin.", "error");
+      }, 15000);
+
+      google.script.run
+        .withSuccessHandler((res) => { clearTimeout(timer); onSearchSuccess(res); })
+        .withFailureHandler((err) => { clearTimeout(timer); onFailure(err); })
+        .clientSearchProduct(code);
     }
 
     // --- AYRIŞTIRILMIŞ İŞLEM FONKSİYONLARI ---

@@ -120,16 +120,39 @@ function parseDate_(v) {
  * setBusy_
  * true -> kilidi açar (BUSY), false -> kilidi kapatır.
  */
+/**
+ * setBusy_
+ * true -> kilidi açar (BUSY), false -> kilidi kapatır.
+ * Kilit zaman aşımı: 30 saniye.
+ */
 function setBusy_(flag) {
-  PropertiesService.getScriptProperties().setProperty("BUSY_FLAG", flag ? "1" : "");
+  const props = PropertiesService.getScriptProperties();
+  if (flag) {
+    const expiresAt = new Date().getTime() + 30000; // 30 sn sonra düşer
+    props.setProperty("BUSY_FLAG", String(expiresAt));
+  } else {
+    props.deleteProperty("BUSY_FLAG");
+  }
 }
 
 /**
  * isBusy_
- * Şu anda kilit açık mı? (BUSY_FLAG == "1")
+ * Şu anda kilit açık mı? 
+ * (BUSY_FLAG var VE süresi dolmamışsa true döner)
  */
 function isBusy_() {
-  return PropertiesService.getScriptProperties().getProperty("BUSY_FLAG") === "1";
+  const props = PropertiesService.getScriptProperties();
+  const val = props.getProperty("BUSY_FLAG");
+  if (!val) return false;
+  
+  // Süre kontrolü
+  const now = new Date().getTime();
+  if (now > Number(val)) {
+    // Süresi dolmuş, kilidi kaldır
+    props.deleteProperty("BUSY_FLAG");
+    return false; 
+  }
+  return true;
 }
 
 function enforceUniqueCodeForNewProduct_(row) {

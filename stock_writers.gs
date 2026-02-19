@@ -253,10 +253,30 @@ function fillCikisUrunForRow_(row) {
  * Tüm STOK satırlarına (2’den son satıra kadar) J formülünü yeniden uygular.
  * Kullanım: Menüden “Tüm stokları güncelle”.
  */
+/**
+ * Tüm STOK satırlarına (2’den son satıra kadar) J formülünü yeniden uygular.
+ * Kullanım: Menüden “Tüm stokları güncelle”.
+ * OPTİMİZASYON: Tek tek yazmak yerine formülleri bellekte oluşturup toplu yazar.
+ */
 function reapplyGuncelToAll_() {
   const sh = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_STOK);
   const last = sh.getLastRow();
-  for (let r = 2; r <= last; r++) yazFormul_(r);
+  if (last < 2) return;
+
+  const formulas = [];
+  const sep = getArgSep_();
+
+  // Formül şablonunu hazırla (satır numarası dinamik)
+  // J = I (Sabit) + (GİRİŞ Toplam) - (ÇIKIŞ Toplam)
+  for (let r = 2; r <= last; r++) {
+    const f = "=I" + r +
+      "+IFERROR(SUMIF('GİRİŞ'!A:A" + sep + "C" + r + sep + "'GİRİŞ'!B:B)" + sep + "0)" +
+      "-IFERROR(SUMIF('ÇIKIŞ'!A:A" + sep + "C" + r + sep + "'ÇIKIŞ'!B:B)" + sep + "0)";
+    formulas.push([f]);
+  }
+
+  // Tek seferde yaz (Batch Operation)
+  sh.getRange(2, S_GUNCEL, formulas.length, 1).setFormulas(formulas).setNumberFormat("#,##0");
   SpreadsheetApp.flush();
 }
 

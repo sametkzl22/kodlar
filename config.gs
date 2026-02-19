@@ -8,6 +8,10 @@ const SHEET_GIRIS = "GİRİŞ";
 const SHEET_STOK  = "STOK LİSTESİ";
 const SHEET_CIKIS = "ÇIKIŞ";
 
+// --- MERKEZİ LİSTELER ---
+const KATEGORI_LISTESI = ["ELEKTRİK", "PNÖMATİK", "OTOMASYON", "DEMİRBAŞ", "ROBOT", "ŞİRKET STOK", "LAZER", "MEKANİK"];
+const BIRIM_LISTESI    = ["ADET", "UZUNLUK (M)", "KG", "LİTRE", "PAKET", "SET"]; 
+
 /***** GİRİŞ Sayfası (A–K) *****
  * A: STOK KODU
  * B: ADET

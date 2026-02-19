@@ -1,8 +1,7 @@
 // dashboard.gs - V17 (GLOBAL ÇAKIŞMA KONTROLÜ: Duplicate Code Fix)
 
 // --- ÖZEL AYARLAR ---
-const KATEGORI_LISTESI = ["ELEKTRİK", "PNÖMATİK", "OTOMASYON", "DEMİRBAŞ", "ROBOT", "ŞİRKET STOK", "LAZER", "MEKANİK"];
-const BIRIM_LISTESI    = ["ADET", "UZUNLUK (M)", "KG", "LİTRE", "PAKET", "SET"]; 
+// KATEGORI_LISTESI ve BIRIM_LISTESI artık config.gs dosyasından geliyor.
 
 // Menü Kurulumu
 function setupDashboard() {
@@ -544,9 +543,11 @@ function clientGetProductsByBrand(brandName) {
 }
 
 // Unicode NFC + normalizeKey_ — Türkçe İ/Ş/Ö/Ü/Ç farklı byte temsillerini eşitler
+// Unicode NFC + normalizeKey_ — Türkçe İ/Ş/Ö/Ü/Ç farklı byte temsillerini eşitler
 function normalizeSearch_(v) {
   if (v === null || v === undefined) return "";
-  return String(v).normalize('NFC').trim().replace(/\s+/g, " ").toUpperCase();
+  // Türkçe karakter desteği için toLocaleUpperCase('tr-TR') kullanıyoruz
+  return String(v).normalize('NFC').trim().replace(/\s+/g, " ").toLocaleUpperCase('tr-TR');
 }
 
 function clientGetProductsByFilters(kat, mar, mod) {
@@ -556,30 +557,36 @@ function clientGetProductsByFilters(kat, mar, mod) {
   if (lastRow < 2) return { success: true, data: [] };
 
   // A1'den başlayarak al — getDataRange() boş A sütununu atlayabilir
-  const data = stok.getRange(1, 1, lastRow, S_RAF).getValues();
+  // S_RAF son sütun olmayabilir, dinamik hesaplayalım.
+  const maxCol = Math.max(S_RAF, S_GUNCEL, S_OZELLIK); 
+  const data = stok.getRange(1, 1, lastRow, maxCol).getValues();
 
   const searchKat = normalizeSearch_(kat);
   const searchMar = normalizeSearch_(mar);
   const searchMod = normalizeSearch_(mod);
 
-  const idxKat     = S_KATEGORI - 1;   // B=1
-  const idxMarka   = S_MARKA - 1;      // D=3
-  const idxModel   = S_MODEL - 1;      // E=4
-  const idxKod     = S_STOK_KODU - 1;  // C=2
-  const idxOzellik = S_OZELLIK - 1;    // F=5
-  const idxStok    = S_GUNCEL - 1;     // J=9
-  const idxRaf     = S_RAF - 1;        // M=12
+  const idxKat     = S_KATEGORI - 1;   
+  const idxMarka   = S_MARKA - 1;      
+  const idxModel   = S_MODEL - 1;      
+  const idxKod     = S_STOK_KODU - 1;  
+  const idxOzellik = S_OZELLIK - 1;    
+  const idxStok    = S_GUNCEL - 1;     
+  const idxRaf     = S_RAF - 1;        
 
   var results = [];
+  // const MAX_RESULTS = 50; // İPTAL EDİLDİ (Kullanıcı isteği)
+
   for (var i = 1; i < data.length; i++) {
+    // if (results.length >= MAX_RESULTS) break; // Limit kaldırıldı
+
     var row = data[i];
     if (!row[idxKod]) continue;
 
-    // Kategori: tam eşleşme (===) — NFC ile normalize edilmiş
+    // Kategori: tam eşleşme
     if (searchKat && normalizeSearch_(row[idxKat]) !== searchKat) continue;
-    // Marka: kısmi eşleşme (indexOf / contains)
+    // Marka: kısmi eşleşme
     if (searchMar && normalizeSearch_(row[idxMarka]).indexOf(searchMar) === -1) continue;
-    // Model: kısmi eşleşme (indexOf / contains)
+    // Model: kısmi eşleşme
     if (searchMod && normalizeSearch_(row[idxModel]).indexOf(searchMod) === -1) continue;
 
     results.push({
