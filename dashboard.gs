@@ -552,26 +552,31 @@ function clientGetProductsByFilters(kat, mar, mod) {
   const searchMar = normalizeKey_(mar);
   const searchMod = normalizeKey_(mod);
 
-  const idxKat     = (typeof S_KATEGORI !== 'undefined' ? S_KATEGORI : 2) - 1;
-  const idxMarka   = (typeof S_MARKA !== 'undefined' ? S_MARKA : 4) - 1;
-  const idxModel   = (typeof S_MODEL !== 'undefined' ? S_MODEL : 5) - 1;
-  const idxKod     = (typeof S_STOK_KODU !== 'undefined' ? S_STOK_KODU : 3) - 1;
-  const idxOzellik = (typeof S_OZELLIK !== 'undefined' ? S_OZELLIK : 6) - 1;
-  const idxStok    = (typeof S_GUNCEL !== 'undefined' ? S_GUNCEL : 10) - 1;
-  const idxRaf     = (typeof S_RAF !== 'undefined' ? S_RAF : 13) - 1;
+  const idxKat     = S_KATEGORI - 1;   // 1
+  const idxMarka   = S_MARKA - 1;      // 3
+  const idxModel   = S_MODEL - 1;      // 4
+  const idxKod     = S_STOK_KODU - 1;  // 2
+  const idxOzellik = S_OZELLIK - 1;    // 5
+  const idxStok    = S_GUNCEL - 1;     // 9
+  const idxRaf     = S_RAF - 1;        // 12
 
-  const results = data.slice(1).filter(function(row) {
-    if (!row[idxKod]) return false;
-    if (searchKat && normalizeKey_(row[idxKat]).indexOf(searchKat) === -1) return false;
-    if (searchMar && normalizeKey_(row[idxMarka]).indexOf(searchMar) === -1) return false;
-    if (searchMod && normalizeKey_(row[idxModel]).indexOf(searchMod) === -1) return false;
-    return true;
-  }).map(function(row) {
-    return {
+  var results = [];
+  for (var i = 1; i < data.length; i++) {
+    var row = data[i];
+    if (!row[idxKod]) continue;
+
+    // Kategori: tam eşleşme (===)
+    if (searchKat && normalizeKey_(row[idxKat]) !== searchKat) continue;
+    // Marka: kısmi eşleşme (indexOf / contains)
+    if (searchMar && normalizeKey_(row[idxMarka]).indexOf(searchMar) === -1) continue;
+    // Model: kısmi eşleşme (indexOf / contains)
+    if (searchMod && normalizeKey_(row[idxModel]).indexOf(searchMod) === -1) continue;
+
+    results.push({
       code: row[idxKod], marka: row[idxMarka], model: row[idxModel],
       ozellik: row[idxOzellik], stok: row[idxStok], raf: row[idxRaf]
-    };
-  });
+    });
+  }
 
   return { success: true, data: results };
 }
