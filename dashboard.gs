@@ -591,38 +591,49 @@ function clientGetProductsByFilters(kat, mar, mod) {
   return { success: true, data: results };
 }
 
-// Diagnostik: STOK sayfasındaki kategorileri ve char kodlarını döner
+// Diagnostik: STOK sayfasındaki kategorileri ve char kodlarını LOG'a yazar
 function clientDebugCategories() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   const stok = ss.getSheetByName(SHEET_STOK);
   const lastRow = stok.getLastRow();
-  if (lastRow < 2) return { categories: [], sampleRow: [], total: 0 };
+  if (lastRow < 2) { Logger.log("STOK sayfası boş!"); return; }
 
   const data = stok.getRange(1, 1, lastRow, S_RAF).getValues();
   const idxKat = S_KATEGORI - 1;
 
+  // Header satırını logla
+  Logger.log("=== HEADER SATIRI (index → başlık → ilk veri) ===");
+  for (var j = 0; j < data[0].length; j++) {
+    Logger.log("  [" + j + "] " + String(data[0][j] || "(BOŞ)") + "  →  " + String(data[1][j] || "(BOŞ)"));
+  }
+
+  Logger.log("=== KATEGORİ SÜTUNU: index " + idxKat + " ===");
+  Logger.log("Toplam veri satırı: " + (lastRow - 1));
+
   var cats = {};
   for (var i = 1; i < data.length; i++) {
     var raw = String(data[i][idxKat] || "");
-    var norm = normalizeSearch_(data[i][idxKat]);
     if (!raw.trim()) continue;
     if (!cats[raw]) {
       var codes = [];
       for (var c = 0; c < raw.length; c++) codes.push(raw.charCodeAt(c));
-      cats[raw] = { raw: raw, normalized: norm, charCodes: codes, count: 0 };
+      cats[raw] = { count: 0, charCodes: codes };
     }
     cats[raw].count++;
   }
 
-  // İlk veri satırını header eşlemesi kontrolü için gönder
-  var sampleRow = [];
-  if (data.length > 1) {
-    for (var j = 0; j < data[1].length; j++) {
-      sampleRow.push({ col: j, header: String(data[0][j] || ""), value: String(data[1][j] || "") });
-    }
+  Logger.log("=== BULUNAN KATEGORİLER ===");
+  var keys = Object.keys(cats);
+  for (var k = 0; k < keys.length; k++) {
+    var entry = cats[keys[k]];
+    Logger.log("  \"" + keys[k] + "\"  (×" + entry.count + ")  charCodes: [" + entry.charCodes.join(", ") + "]");
   }
 
-  return { categories: Object.values(cats), sampleRow: sampleRow, total: lastRow - 1 };
+  if (keys.length === 0) {
+    Logger.log("  ⚠️ HİÇ KATEGORİ BULUNAMADI — sütun indeksi yanlış olabilir!");
+  }
+
+  Logger.log("=== BİTTİ ===");
 }
 
 function updateShortHistory_(type, code, urunAdi, adet, projeAdi) {
