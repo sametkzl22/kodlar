@@ -1,0 +1,616 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <base target="_top">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    
+    <style>
+      body { font-family: 'Segoe UI', Roboto, sans-serif; background-color: #f3f4f6; }
+      
+      /* Sekme Efektleri */
+      .tab-btn.active { border-bottom: 3px solid #2563eb; color: #2563eb; background-color: #eff6ff; }
+      .tab-content { display: none; }
+      .tab-content.active { display: block; animation: fadeIn 0.3s ease-in-out; }
+      @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+  </head>
+  <body class="min-h-screen flex flex-col items-center py-6 md:py-10">
+
+    <div class="w-full max-w-4xl bg-white shadow-2xl rounded-xl overflow-hidden">
+      
+      <div class="bg-gray-800 text-white p-6 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <img src="https://akillikobi.org.tr/media/0dnldghy/logo.png" 
+              alt="Logo" 
+              class="h-16 md:h-20 w-auto object-contain bg-white rounded-lg p-1 shadow-sm">
+          <div>
+            <h1 class="text-xl md:text-2xl font-bold">Stok Yönetim Paneli</h1>
+            <p class="text-xs text-gray-400">Web App v5.5 | Enter Tuşu Aktif</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="flex border-b bg-gray-50">
+        <button onclick="switchTab('dashboard')" id="btn-dashboard" class="tab-btn active flex-1 py-4 text-sm md:text-base font-semibold text-gray-500 hover:text-blue-600 transition flex justify-center items-center gap-2">
+          <i class="fas fa-search"></i> Stok & Hareket
+        </button>
+        <button onclick="switchTab('newcard')" id="btn-newcard" class="tab-btn flex-1 py-4 text-sm md:text-base font-semibold text-gray-500 hover:text-blue-600 transition flex justify-center items-center gap-2">
+          <i class="fas fa-plus-circle"></i> Yeni Kart Aç
+        </button>
+      </div>
+
+      <div class="p-4 md:p-8 min-h-[500px]">
+
+        <div id="tab-dashboard" class="tab-content active space-y-6">
+          
+          <div class="flex justify-center gap-4 mb-4">
+             <button onclick="toggleSearchMode('code')" id="mode-code" class="px-4 py-2 rounded-full text-xs md:text-sm font-bold bg-blue-100 text-blue-700 ring-2 ring-blue-500 transition">Kod ile Ara</button>
+             <button onclick="toggleSearchMode('detail')" id="mode-detail" class="px-4 py-2 rounded-full text-xs md:text-sm font-bold bg-gray-100 text-gray-500 hover:bg-gray-200 transition">Detaylı Ara</button>
+          </div>
+
+          <div id="search-area-code" class="max-w-2xl mx-auto relative">
+            <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+              <i class="fas fa-barcode text-gray-400 text-lg"></i>
+            </div>
+            <input type="text" id="search-input" placeholder="STOK KODU GİRİN..." 
+              class="w-full pl-12 pr-4 py-4 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-blue-100 focus:border-blue-500 outline-none text-lg font-mono uppercase transition shadow-sm"
+              onkeydown="if(event.key === 'Enter') doSearch()">
+            <button onclick="doSearch()" class="absolute right-3 top-2.5 bottom-2.5 bg-blue-600 text-white px-6 rounded-lg font-bold hover:bg-blue-700 transition shadow-md">BUL</button>
+          </div>
+
+          <div id="search-area-detail" class="hidden max-w-3xl mx-auto bg-gray-50 p-6 rounded-xl border border-gray-200 shadow-inner">
+             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                   <label class="block text-xs font-bold text-gray-500 mb-1">Kategori</label>
+                   <select id="s-kategori" class="w-full p-3 border rounded-lg bg-white focus:border-blue-500 outline-none text-sm"></select>
+                </div>
+                <div>
+                   <label class="block text-xs font-bold text-gray-500 mb-1">Marka</label>
+                   <input type="text" id="s-marka" placeholder="Örn: Siemens" class="w-full p-3 border rounded-lg focus:border-blue-500 outline-none text-sm" onkeydown="if(event.key === 'Enter') doDetailSearch()">
+                </div>
+                <div>
+                   <label class="block text-xs font-bold text-gray-500 mb-1">Model</label>
+                   <input type="text" id="s-model" placeholder="Örn: S7-1200" class="w-full p-3 border rounded-lg focus:border-blue-500 outline-none text-sm" onkeydown="if(event.key === 'Enter') doDetailSearch()">
+                </div>
+             </div>
+             <button onclick="doDetailSearch()" class="w-full mt-4 bg-purple-600 text-white py-3 rounded-lg font-bold hover:bg-purple-700 transition shadow-md flex items-center justify-center gap-2">
+                <i class="fas fa-search"></i> ÜRÜNÜ / LİSTEYİ BUL
+             </button>
+             <p class="text-xs text-gray-400 mt-2 text-center">* Sadece Marka girerseniz o markanın tüm ürünleri listelenir.</p>
+          </div>
+
+          <div id="brand-results-area" class="hidden mt-6 animate-fade-in-up">
+            <h3 class="text-lg font-bold text-gray-700 mb-3 border-b pb-2 flex justify-between items-center">
+              <span>Arama Sonuçları</span>
+              <button onclick="hideBrandResults()" class="text-xs text-red-500 hover:text-red-700 font-bold bg-red-50 px-3 py-1 rounded border border-red-100">Kapat</button>
+            </h3>
+            
+            <div class="overflow-y-auto max-h-64 rounded-lg border border-gray-200 shadow-sm">
+              <table class="w-full text-sm text-left text-gray-600">
+                <thead class="text-xs text-gray-700 uppercase bg-gray-100 sticky top-0">
+                  <tr>
+                    <th class="px-4 py-3">Kod</th>
+                    <th class="px-4 py-3">Model</th>
+                    <th class="px-4 py-3">Özellik</th>
+                    <th class="px-4 py-3 text-center">Stok</th>
+                    <th class="px-4 py-3 text-center">İşlem</th>
+                  </tr>
+                </thead>
+                <tbody id="brand-results-body" class="bg-white divide-y divide-gray-100">
+                  </tbody>
+              </table>
+            </div>
+            <p id="brand-count-msg" class="text-xs text-gray-400 mt-2 text-right">0 sonuç.</p>
+          </div>
+
+          <div id="loader" class="hidden flex flex-col items-center justify-center py-6">
+            <video autoplay loop muted playsinline class="w-64 h-auto rounded-xl shadow-lg object-cover bg-white">
+              <source src="https://i.imgur.com/wXDaY8q.mp4" type="video/mp4">
+            </video>
+            <p class="text-gray-500 text-xs font-bold mt-4 tracking-widest animate-pulse">
+              <i class="fas fa-cog fa-spin mr-2"></i>İŞLENİYOR...
+            </p>
+          </div>
+
+          <div id="product-card" class="hidden grid grid-cols-1 md:grid-cols-2 gap-8 animate-fade-in-up">
+            
+            <div class="bg-gray-50 border border-gray-200 rounded-xl p-6 shadow-sm relative overflow-hidden">
+              <div class="absolute top-0 right-0 p-4 opacity-10">
+                <i class="fas fa-box-open text-9xl"></i>
+              </div>
+              
+              <h3 class="text-sm font-bold text-gray-400 uppercase tracking-wider mb-2">BULUNAN ÜRÜN</h3>
+              
+              <div class="flex items-center gap-2 mb-3">
+                 <span id="p-code" class="bg-gray-800 text-white text-xs px-3 py-1.5 rounded font-mono shadow-sm tracking-wide">
+                    STOK KODU : -
+                 </span>
+              </div>
+              
+              <div class="flex flex-col mb-2">
+                 <span class="text-[10px] font-bold text-gray-500 uppercase">ÜRÜN MARKA :</span>
+                 <h2 id="p-marka" class="text-2xl font-bold text-gray-800 leading-tight">MARKA</h2>
+              </div>
+              
+              <div class="flex flex-col mb-5">
+                 <span class="text-[10px] font-bold text-gray-500 uppercase">ÜRÜN KODU :</span>
+                 <p id="p-model" class="text-lg text-gray-600 font-semibold leading-tight">Model Bilgisi</p>
+              </div>
+              
+              <div class="space-y-3 bg-white p-3 rounded-lg border border-gray-100 shadow-sm">
+                <div class="flex justify-between border-b pb-2 border-gray-100">
+                  <span class="text-gray-500 text-xs font-bold self-center">MEVCUT STOK</span>
+                  <span id="p-stok" class="bg-blue-100 text-blue-800 text-sm font-bold px-3 py-1 rounded-full">0 ADET</span>
+                </div>
+                <div class="flex justify-between border-b pb-2 border-gray-100">
+                  <span class="text-gray-500 text-xs font-bold">RAF YERİ</span>
+                  <span id="p-raf" class="font-mono font-bold text-gray-700">-</span>
+                </div>
+                <div class="flex justify-between items-start">
+                  <span class="text-gray-500 text-xs font-bold pt-1">ÖZELLİKLER</span>
+                  <span id="p-ozellik" class="font-medium text-xs text-gray-700 text-right w-2/3 break-words">-</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="flex flex-col gap-4">
+
+              <div class="bg-green-50 border-2 border-green-200 rounded-xl p-4 shadow-sm relative overflow-hidden group hover:border-green-400 transition-colors">
+                <div class="absolute top-0 right-0 p-2 opacity-10 pointer-events-none">
+                  <i class="fas fa-plus-circle text-6xl text-green-700"></i>
+                </div>
+                <h3 class="font-bold text-green-800 mb-3 flex items-center"><i class="fas fa-download mr-2"></i> STOK EKLE (GİRİŞ)</h3>
+                <div class="flex gap-2">
+                  <input type="number" id="qty-giris" placeholder="Adet" class="w-1/3 p-2 border border-green-300 rounded-lg text-center font-bold outline-none bg-white focus:ring-2 focus:ring-green-500" onkeydown="if(event.key === 'Enter') doInbound()">
+                  <button onclick="doInbound()" class="flex-1 bg-green-600 text-white rounded-lg font-bold hover:bg-green-700 transition shadow-md text-sm">GİRİŞ YAP</button>
+                </div>
+              </div>
+
+              <div class="bg-red-50 border-2 border-red-200 rounded-xl p-4 shadow-sm relative overflow-hidden group hover:border-red-400 transition-colors">
+                <div class="absolute top-0 right-0 p-2 opacity-10 pointer-events-none">
+                  <i class="fas fa-upload text-6xl text-red-700"></i>
+                </div>
+                <h3 class="font-bold text-red-800 mb-3 flex items-center"><i class="fas fa-upload mr-2"></i> STOK DÜŞ (ÇIKIŞ)</h3>
+                
+                <div class="mb-3">
+                  <input type="text" id="proje-cikis" placeholder="Kullanılan Proje / Yer..." class="w-full p-2 border border-red-300 rounded-lg text-sm font-bold text-gray-700 outline-none bg-white focus:ring-2 focus:ring-red-500" onkeydown="if(event.key === 'Enter') doOutbound()">
+                </div>
+                
+                <div class="flex gap-2">
+                  <input type="number" id="qty-cikis" placeholder="Adet" class="w-1/3 p-2 border border-red-300 rounded-lg text-center font-bold outline-none bg-white focus:ring-2 focus:ring-red-500" onkeydown="if(event.key === 'Enter') doOutbound()">
+                  <button onclick="doOutbound()" class="flex-1 bg-red-600 text-white rounded-lg font-bold hover:bg-red-700 transition shadow-md text-sm">ÇIKIŞ YAP</button>
+                </div>
+              </div>
+
+            </div>
+          </div>
+          
+          <div id="message-box" class="hidden p-4 rounded-lg text-center font-bold text-lg shadow-md transition-all"></div>
+          <div class="mt-8">
+            <h3 class="text-sm font-bold text-gray-500 uppercase tracking-wider mb-3 flex justify-between items-center">
+              <span>SON HAREKETLER</span>
+              <button onclick="loadRecentHistory()" class="text-blue-500 hover:text-blue-700 text-xs"><i class="fas fa-sync-alt"></i></button>
+            </h3>
+            
+            <div class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+              <ul id="history-list" class="divide-y divide-gray-100">
+                <li class="p-4 text-center text-gray-400 text-xs">Yükleniyor...</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        <div id="tab-newcard" class="tab-content max-w-2xl mx-auto space-y-6">
+          <div class="bg-blue-50 border-l-4 border-blue-500 p-4 rounded text-blue-700 text-sm shadow-sm">
+            <i class="fas fa-info-circle mr-2"></i> Kategori seçtiğinizde kod otomatik önerilir.
+          </div>
+          
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6 bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
+            <div class="col-span-1 md:col-span-2">
+              <label class="block text-sm font-bold text-gray-700 mb-2">Kategori</label>
+              <select id="nc-kategori" class="w-full p-3 border rounded-lg bg-gray-50 focus:ring-2 focus:ring-blue-500 outline-none transition" onchange="getSuggestedCode()"></select>
+            </div>
+            
+            <div class="col-span-1 md:col-span-2">
+               <label class="block text-sm font-bold text-gray-700 mb-2">Otomatik Kod</label>
+               <input type="text" id="nc-code" disabled class="w-full p-3 border rounded-lg bg-gray-200 text-gray-600 font-mono font-bold tracking-widest text-center shadow-inner">
+            </div>
+            
+            <div>
+              <label class="block text-sm font-bold text-gray-700 mb-2">Marka</label>
+              <input type="text" id="nc-marka" class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition">
+            </div>
+            
+            <div>
+              <label class="block text-sm font-bold text-gray-700 mb-2">Model</label>
+              <input type="text" id="nc-model" class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition">
+            </div>
+            
+            <div class="col-span-1 md:col-span-2">
+               <label class="block text-sm font-bold text-gray-700 mb-2">Ürün Adı (Özellik)</label>
+               <input type="text" id="nc-ozellik" class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition">
+            </div>
+            
+            <div class="col-span-1 md:col-span-2">
+               <label class="block text-sm font-bold text-gray-700 mb-2">Açıklama</label>
+               <textarea id="nc-aciklama" rows="2" class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition"></textarea>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 col-span-1 md:col-span-2">
+                <div>
+                  <label class="block text-sm font-bold text-gray-700 mb-2">Birim</label>
+                  <select id="nc-birim" class="w-full p-3 border rounded-lg bg-white focus:ring-2 focus:ring-blue-500 outline-none transition"></select>
+                </div>
+                
+                <div>
+                  <label class="block text-sm font-bold text-gray-700 mb-2">Raf Sırası</label>
+                  <input type="text" id="nc-raf" placeholder="Örn: A-12" class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition">
+                </div>
+
+                <div>
+                  <label class="block text-sm font-bold text-gray-700 mb-2">Başlangıç Stoğu</label>
+                  <input type="number" id="nc-baslangic" value="0" class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition">
+                </div>
+            </div>
+          </div>
+          
+          <button onclick="doCreateCard()" class="w-full bg-blue-600 text-white py-4 rounded-xl font-bold text-lg hover:bg-blue-700 transition shadow-lg flex items-center justify-center gap-2">
+            <i class="fas fa-save"></i> KARTI OLUŞTUR
+          </button>
+          
+          <div id="nc-message" class="hidden p-4 rounded-lg text-center font-bold shadow-md"></div>
+        </div>
+
+      </div>
+      
+      <div class="bg-gray-100 p-4 text-center text-gray-400 text-xs border-t">
+        &copy; 2026 Stok Takip Sistemi | Designed for Industry
+      </div>
+    </div>
+
+    <script>
+      let activeProductCode = ""; 
+      const KATEGORI_LISTESI = ["ELEKTRİK", "PNÖMATİK", "OTOMASYON", "DEMİRBAŞ", "ROBOT", "ŞİRKET STOK", "LAZER", "MEKANİK"];
+      const BIRIM_LISTESI = ["ADET", "UZUNLUK (M)", "KG", "LİTRE", "PAKET", "SET"];
+
+      window.onload = function() {
+        populateLocalLists();
+        showLoader(true);
+        setTimeout(() => showLoader(false), 500);
+        
+        loadRecentHistory(); // <--- BU SATIRI EKLE
+      };
+
+      function populateLocalLists() {
+        const catSelect = document.getElementById('nc-kategori');
+        const searchCatSelect = document.getElementById('s-kategori');
+
+        catSelect.innerHTML = '<option value="">Seçiniz...</option>';
+        searchCatSelect.innerHTML = '<option value="">Seçiniz...</option>';
+
+        KATEGORI_LISTESI.forEach(c => {
+          let opt1 = document.createElement('option');
+          opt1.value = c; opt1.text = c; catSelect.add(opt1);
+          let opt2 = document.createElement('option');
+          opt2.value = c; opt2.text = c; searchCatSelect.add(opt2);
+        });
+        
+        const birimSelect = document.getElementById('nc-birim');
+        birimSelect.innerHTML = "";
+        BIRIM_LISTESI.forEach(b => {
+           let opt = document.createElement('option');
+           opt.value = b; opt.text = b; birimSelect.add(opt);
+        });
+      }
+
+      function switchTab(tabId) {
+        document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+        document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+        document.getElementById('tab-' + tabId).classList.add('active');
+        document.getElementById('btn-' + tabId).classList.add('active');
+      }
+
+      function toggleSearchMode(mode) {
+         const codeArea = document.getElementById('search-area-code');
+         const detailArea = document.getElementById('search-area-detail');
+         const btnCode = document.getElementById('mode-code');
+         const btnDetail = document.getElementById('mode-detail');
+         
+         hideProductCard(); 
+         hideBrandResults(); 
+
+         if(mode === 'code') {
+            codeArea.classList.remove('hidden');
+            detailArea.classList.add('hidden');
+            btnCode.className = "px-4 py-2 rounded-full text-xs md:text-sm font-bold bg-blue-100 text-blue-700 ring-2 ring-blue-500 transition";
+            btnDetail.className = "px-4 py-2 rounded-full text-xs md:text-sm font-bold bg-gray-100 text-gray-500 hover:bg-gray-200 transition";
+         } else {
+            codeArea.classList.add('hidden');
+            detailArea.classList.remove('hidden');
+            btnCode.className = "px-4 py-2 rounded-full text-xs md:text-sm font-bold bg-gray-100 text-gray-500 hover:bg-gray-200 transition";
+            btnDetail.className = "px-4 py-2 rounded-full text-xs md:text-sm font-bold bg-purple-100 text-purple-700 ring-2 ring-purple-500 transition";
+         }
+      }
+
+      function doSearch() {
+        const code = document.getElementById('search-input').value.trim();
+        if(!code) return showMsg('Lütfen kod girin.', 'error');
+        showLoader(true);
+        hideProductCard();
+        hideBrandResults();
+        google.script.run.withSuccessHandler(onSearchSuccess).withFailureHandler(onFailure).clientSearchProduct(code);
+      }
+
+      // --- DETAYLI ARAMA (TABLO DESTEKLİ) ---
+      function doDetailSearch() {
+         const kat = document.getElementById('s-kategori').value;
+         const mar = document.getElementById('s-marka').value.trim();
+         const mod = document.getElementById('s-model').value.trim();
+
+         // Senaryo 1: Sadece MARKA girilmiş (Tablo Getir)
+         if (mar && !kat && !mod) {
+            showLoader(true);
+            hideProductCard();
+            hideBrandResults();
+            google.script.run
+              .withSuccessHandler(onBrandListSuccess)
+              .withFailureHandler(onFailure)
+              .clientGetProductsByBrand(mar);
+            return;
+         }
+
+         // Senaryo 2: Standart detaylı arama
+         if(!kat && !mar && !mod) return showMsg('Lütfen en az bir kriter (Marka vb.) girin.', 'error');
+         showLoader(true);
+         hideProductCard();
+         hideBrandResults();
+         google.script.run.withSuccessHandler(onSearchSuccess).withFailureHandler(onFailure).clientSearchByDetails(kat, mar, mod);
+      }
+
+      function onSearchSuccess(res) {
+        showLoader(false);
+        if(!res.success) { showMsg(res.message, 'error'); return; }
+        
+        const d = res.data;
+        activeProductCode = d.code; 
+
+        document.getElementById('p-code').innerText = "STOK KODU : " + d.code;
+        document.getElementById('p-marka').innerText = d.marka;
+        document.getElementById('p-model').innerText = d.model;
+        document.getElementById('p-raf').innerText = d.raf || '-';
+        document.getElementById('p-ozellik').innerText = d.ozellik || '-';
+        document.getElementById('p-stok').innerText = d.stok + " " + d.birim;
+        
+        const badge = document.getElementById('p-stok');
+        if(d.stok > 0) badge.className = "bg-green-100 text-green-800 text-lg font-bold px-3 py-1 rounded-full";
+        else badge.className = "bg-red-100 text-red-800 text-lg font-bold px-3 py-1 rounded-full";
+
+        document.getElementById('product-card').classList.remove('hidden');
+        showMsg('', 'clear');
+      }
+
+      // --- MARKA LİSTESİ SONUÇLARI (TABLO) ---
+      function onBrandListSuccess(res) {
+        showLoader(false);
+        if(!res.success || res.data.length === 0) {
+           showMsg("Bu markaya ait ürün bulunamadı.", 'error'); return;
+        }
+
+        const list = res.data;
+        const tbody = document.getElementById('brand-results-body');
+        tbody.innerHTML = ""; 
+
+        list.forEach(item => {
+           const stokClass = item.stok > 0 ? "text-green-600 font-bold" : "text-red-500 font-bold";
+           
+           const tr = document.createElement('tr');
+           tr.className = "hover:bg-blue-50 transition border-b border-gray-100";
+           tr.innerHTML = `
+              <td class="px-4 py-3 font-mono text-gray-800 font-bold text-xs">${item.code}</td>
+              <td class="px-4 py-3">
+                 <div class="font-bold text-gray-700 text-sm">${item.model}</div>
+                 <div class="text-[10px] text-gray-400">Raf: ${item.raf || '-'}</div>
+              </td>
+              <td class="px-4 py-3 text-xs text-gray-500 max-w-[150px] truncate" title="${item.ozellik || ''}">
+                 ${item.ozellik || '-'}
+              </td>
+              <td class="px-4 py-3 text-center ${stokClass} text-sm">${item.stok}</td>
+              <td class="px-4 py-3 text-center">
+                 <button onclick="selectProductFromList('${item.code}')" class="bg-blue-100 text-blue-600 px-3 py-1 rounded text-xs font-bold hover:bg-blue-600 hover:text-white transition">
+                   SEÇ
+                 </button>
+              </td>
+           `;
+           tbody.appendChild(tr);
+        });
+
+        document.getElementById('brand-count-msg').innerText = list.length + " ürün listelendi.";
+        document.getElementById('brand-results-area').classList.remove('hidden');
+      }
+
+      function selectProductFromList(code) {
+         hideBrandResults();
+         showLoader(true);
+         google.script.run.withSuccessHandler(onSearchSuccess).withFailureHandler(onFailure).clientSearchProduct(code);
+      }
+
+      // --- AYRIŞTIRILMIŞ İŞLEM FONKSİYONLARI ---
+      
+      // 1. Sadece GİRİŞ
+      function doInbound() {
+        const code = activeProductCode || document.getElementById('search-input').value.trim();
+        const adet = document.getElementById('qty-giris').value; 
+        if(!code) return showMsg("Lütfen önce bir ürün aratın.", 'error');
+        if(!adet || Number(adet) <= 0) return showMsg("Giriş adedi yazınız.", 'error');
+
+        showLoader(true);
+        google.script.run.withSuccessHandler(onTxSuccess).withFailureHandler(onFailure).clientQuickTransaction('GIRIS', code, adet, "");
+      }
+
+      // 2. Sadece ÇIKIŞ
+      function doOutbound() {
+        const code = activeProductCode || document.getElementById('search-input').value.trim();
+        const adet = document.getElementById('qty-cikis').value; 
+        const proje = document.getElementById('proje-cikis').value.trim(); 
+        if(!code) return showMsg("Lütfen önce bir ürün aratın.", 'error');
+        if(!adet || Number(adet) <= 0) return showMsg("Çıkış adedi yazınız.", 'error');
+        if(!proje) return showMsg("Lütfen Proje/Yer adını giriniz!", 'error'); 
+
+        showLoader(true);
+        google.script.run.withSuccessHandler(onTxSuccess).withFailureHandler(onFailure).clientQuickTransaction('CIKIS', code, adet, proje);
+      }
+      
+      function onTxSuccess(res) {
+        showLoader(false);
+        if(res.success) {
+          showMsg(res.message, 'success');
+          document.getElementById('qty-giris').value = "";
+          document.getElementById('qty-cikis').value = "";
+          document.getElementById('proje-cikis').value = "";
+          loadRecentHistory();
+          
+          if(activeProductCode) {
+             google.script.run.withSuccessHandler(onSearchSuccess).withFailureHandler(onFailure).clientSearchProduct(activeProductCode);
+          }
+        } else {
+          alert(res.message);
+          showMsg(res.message, 'error');
+        }
+      }
+
+      function getSuggestedCode() {
+        const cat = document.getElementById('nc-kategori').value;
+        if(!cat) return;
+        document.getElementById('nc-code').value = "Yükleniyor...";
+        
+        google.script.run.withSuccessHandler(function(res){
+           if(typeof res === 'string') document.getElementById('nc-code').value = res;
+           else if(res.code) document.getElementById('nc-code').value = res.code;
+        }).clientGetNextCode(cat); 
+      }
+
+      function doCreateCard() {
+        const form = {
+          kategori: document.getElementById('nc-kategori').value,
+          code: document.getElementById('nc-code').value,
+          marka: document.getElementById('nc-marka').value,
+          model: document.getElementById('nc-model').value,
+          ozellik: document.getElementById('nc-ozellik').value,
+          aciklama: document.getElementById('nc-aciklama').value,
+          birim: document.getElementById('nc-birim').value,
+          baslangic: document.getElementById('nc-baslangic').value,
+          raf: document.getElementById('nc-raf').value
+        };
+
+        if(!form.kategori || !form.marka || !form.model) {
+          showNcMsg("Kategori, Marka ve Model zorunlu.", true); return;
+        }
+
+        showNcMsg("Kaydediliyor...", false);
+        google.script.run.withSuccessHandler(function(res){
+          if(res.success) {
+             showNcMsg(res.message, false);
+             document.getElementById('nc-marka').value = "";
+             document.getElementById('nc-model').value = "";
+             document.getElementById('nc-ozellik').value = "";
+             document.getElementById('nc-aciklama').value = "";
+             document.getElementById('nc-raf').value = "";
+             document.getElementById('nc-baslangic').value = "0";
+             getSuggestedCode();
+          } else {
+             showNcMsg(res.message, true);
+          }
+        }).clientCreateCard(form);
+      }
+
+      function showLoader(show) { 
+        const el = document.getElementById('loader');
+        if(show) el.classList.remove('hidden'); else el.classList.add('hidden');
+      }
+      function hideProductCard() { document.getElementById('product-card').classList.add('hidden'); }
+      function hideBrandResults() { document.getElementById('brand-results-area').classList.add('hidden'); }
+
+      function showMsg(msg, type) {
+        const el = document.getElementById('message-box');
+        if(type === 'clear') { el.classList.add('hidden'); return; }
+        el.innerText = msg;
+        el.classList.remove('hidden', 'bg-red-100', 'text-red-700', 'bg-green-100', 'text-green-700');
+        el.classList.add(type === 'error' ? 'bg-red-100' : 'bg-green-100', type === 'error' ? 'text-red-700' : 'text-green-700');
+      }
+
+      function showNcMsg(msg, isError) {
+        const el = document.getElementById('nc-message');
+        el.innerText = msg;
+        el.classList.remove('hidden', 'bg-red-100', 'text-red-700', 'bg-green-100', 'text-green-700');
+        el.classList.add(isError ? 'bg-red-100' : 'bg-green-100', isError ? 'text-red-700' : 'text-green-700');
+      }
+
+      function onFailure(err) { showLoader(false); showMsg("Hata: " + err.message, 'error'); }
+      function loadRecentHistory() {
+        google.script.run
+          .withSuccessHandler(renderHistory)
+          .clientGetShortHistory();
+      }
+
+      function renderHistory(data) {
+        const ul = document.getElementById('history-list');
+        ul.innerHTML = ""; // Temizle
+
+        if (!data || data.length === 0) {
+          ul.innerHTML = '<li class="p-4 text-center text-gray-400 text-xs">Henüz işlem yok.</li>';
+          return;
+        }
+
+        data.forEach(item => {
+          let icon = "";
+          let title = "";
+          let badge = "";
+          let urunAdi = item.urunAdi || "Ürün"; // Yeni alan
+          let projeHtml = "";
+
+          // Tarih ve Kod
+          let metaInfo = `<span class="text-[10px] text-gray-400 font-mono mr-2">${item.dateStr}</span> <span class="text-[10px] bg-gray-100 text-gray-600 px-1 rounded font-mono">${item.code}</span>`;
+
+          if (item.type === 'GIRIS') {
+             icon = '<div class="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center text-green-600"><i class="fas fa-arrow-down"></i></div>';
+             title = "Stok Girişi";
+             badge = `<span class="text-green-600 font-bold text-xs">+${item.adet} Adet</span>`;
+          } else if (item.type === 'CIKIS') {
+             icon = '<div class="w-8 h-8 rounded-full bg-red-100 flex items-center justify-center text-red-600"><i class="fas fa-arrow-up"></i></div>';
+             title = "Stok Çıkışı";
+             badge = `<span class="text-red-600 font-bold text-xs">-${item.adet} Adet</span>`;
+             if(item.proje) {
+               projeHtml = `<div class="text-[10px] text-gray-400 mt-1"><i class="fas fa-project-diagram mr-1"></i>${item.proje}</div>`;
+             }
+          } else { // YENI
+             icon = '<div class="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-600"><i class="fas fa-plus"></i></div>';
+             title = "Yeni Kart";
+             badge = `<span class="text-blue-600 font-bold text-xs">Başlangıç: ${item.adet}</span>`;
+          }
+
+          const li = document.createElement('li');
+          li.className = "p-3 flex items-center gap-3 hover:bg-gray-50 transition border-b border-gray-50 last:border-0";
+          li.innerHTML = `
+            ${icon}
+            <div class="flex-1 min-w-0"> <div class="flex justify-between items-start">
+                 <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">${title}</span>
+                 ${badge}
+              </div>
+              
+              <div class="font-bold text-gray-800 text-sm truncate" title="${urunAdi}">
+                 ${urunAdi}
+              </div>
+              
+              <div class="mt-1">
+                 ${metaInfo}
+                 ${projeHtml}
+              </div>
+            </div>
+          `;
+          ul.appendChild(li);
+        });
+      }
+    </script>
+  </body>
+</html>
