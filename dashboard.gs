@@ -298,7 +298,7 @@ function apiCreateInternal_(form) {
   if (bir) stok.getRange(newRow, S_BIRIM).setValue(bir);
   if (raf) stok.getRange(newRow, S_RAF).setValue(raf);
   
-  stok.getRange(newRow, S_BASLANGIC).setValue(0);
+  stok.getRange(newRow, S_BASLANGIC).setValue(bas);
   
   yazFormul_(newRow);
   stok.getRange(newRow, S_GIRIS_TARIHI).setValue(new Date()).setNumberFormat("yyyy-mm-dd");
@@ -306,10 +306,6 @@ function apiCreateInternal_(form) {
   SpreadsheetApp.flush(); 
 
   updateShortHistory_('YENI', code, `${brand} ${model}`, bas, ""); 
-
-  if (bas > 0) {
-    apiInboundInternal_(code, bas);
-  }
   
   return { success: true, message: `Kart açıldı. Kod: ${code}` };
 }
